@@ -35,8 +35,9 @@ export default function TestSetup({ onStart, onBack }: TestSetupProps) {
       {/* Número de preguntas */}
       <div className="card">
         <h2 className="font-semibold text-gray-700 mb-4">Número de preguntas</h2>
+        <p className="text-xs text-blue-600 mb-3">El examen real tiene 100 preguntas</p>
         <div className="flex flex-wrap gap-3">
-          {[10, 25, 50, 100, 150, 300].map(n => (
+          {[10, 25, 50, 100].map(n => (
             <button
               key={n}
               onClick={() => setQuestionCount(n)}
@@ -55,9 +56,9 @@ export default function TestSetup({ onStart, onBack }: TestSetupProps) {
           <input
             type="number"
             min={1}
-            max={300}
+            max={100}
             value={questionCount}
-            onChange={e => setQuestionCount(Math.min(300, Math.max(1, parseInt(e.target.value) || 1)))}
+            onChange={e => setQuestionCount(Math.min(100, Math.max(1, parseInt(e.target.value) || 1)))}
             className="w-28 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>

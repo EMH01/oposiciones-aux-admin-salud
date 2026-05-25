@@ -38,8 +38,8 @@ export default function Dashboard({ state, onNewTest, onStats, onReset }: Dashbo
     <div className="max-w-4xl mx-auto px-4 py-8 space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Oposiciones SAS</h1>
-          <p className="text-gray-500 mt-1">Grupo Auxiliar Administrativo · 300 preguntas</p>
+          <h1 className="text-3xl font-bold text-gray-900">Oposiciones SCS</h1>
+          <p className="text-gray-500 mt-1">Aux. Administrativo · Canarias · 300 preguntas</p>
         </div>
         <div className="flex gap-3">
           <button onClick={onStats} className="btn-secondary flex-1 sm:flex-none">
