@@ -1,6 +1,6 @@
 # Oposiciones Auxiliar Administrativo — SAS
 
-Aplicación web para preparar el examen de **Grupo Auxiliar de la Función Administrativa del Servicio Andaluz de Salud (SAS)**.
+Aplicación web para preparar el examen de **Grupo Auxiliar de la Función Administrativa**.
 
 300 preguntas tipo test organizadas por temas, con selección inteligente de preguntas, estadísticas detalladas y persistencia local en el navegador.
 
