@@ -137,6 +137,30 @@ export default function Stats({ state, onBack, onExport, onImport }: StatsProps)
         </ResponsiveContainer>
       </div>
 
+      {/* Scoring guide */}
+      <div className="card">
+        <h2 className="font-semibold text-gray-700 mb-3">Sistema de calificación</h2>
+        <div className="grid grid-cols-2 gap-4 text-sm mb-3">
+          <div className="bg-gray-50 rounded-lg p-3">
+            <p className="font-medium text-gray-700 mb-1">Sin penalización</p>
+            <p className="text-gray-500">Acierto → <span className="text-green-600 font-semibold">+1</span></p>
+            <p className="text-gray-500">Fallo / Blanco → 0</p>
+          </div>
+          <div className="bg-gray-50 rounded-lg p-3">
+            <p className="font-medium text-gray-700 mb-1">Con penalización (examen real)</p>
+            <p className="text-gray-500">Acierto → <span className="text-green-600 font-semibold">+1</span></p>
+            <p className="text-gray-500">Fallo → <span className="text-red-500 font-semibold">−⅓</span> · Blanco → 0</p>
+          </div>
+        </div>
+        <div className="flex gap-2 text-xs flex-wrap">
+          <span className="bg-red-100 text-red-700 px-2 py-1 rounded-full">{'< 5 · Suspenso'}</span>
+          <span className="bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full">5–6 · Aprobado</span>
+          <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full">6–7 · Bien</span>
+          <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full">≥ 7 · Muy bien</span>
+        </div>
+        <p className="text-xs text-gray-400 mt-2">Nota = (puntos netos / preguntas) × 10 · Mínimo para aprobar: 5</p>
+      </div>
+
       {/* Test history */}
       {totalTests > 0 && (
         <div className="card">
