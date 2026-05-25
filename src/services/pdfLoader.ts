@@ -86,7 +86,34 @@ async function extractLines(pdf: pdfjs.PDFDocumentProxy): Promise<string[]> {
   return allLines;
 }
 
+/**
+ * Elimina el ruido de pie de página del PDF antes de parsear.
+ * Patrón típico de este PDF:
+ *   "Página N de N En la dirección https://... Nº de preguntas de reserva: N"
+ *   "Respuesta Correcta: X"  ← revelaba la respuesta correcta en la opción D
+ */
+function sanitize(lines: string[]): string[] {
+  const joined = lines.join('\n');
+
+  const clean = joined
+    // Bloque completo del pie de página de verificación del documento
+    .replace(
+      /Página\s+\d+\s+de\s+\d+\s+En\s+la\s+direcci[oó]n\s+https?:\/\/[\s\S]*?(?:reserva\s*:\s*\d+)/gi,
+      '',
+    )
+    // "Respuesta Correcta: X" — no lo necesitamos, las respuestas están en questions.ts
+    .replace(/\s*Respuesta\s+Correcta\s*:\s*[A-D]/gi, '')
+    // Limpiar espacios extra resultantes
+    .replace(/[ \t]{2,}/g, ' ');
+
+  return clean
+    .split('\n')
+    .map(l => l.trim())
+    .filter(l => l.length > 0);
+}
+
 function parseLines(lines: string[]): RawQ[] {
+  const cleaned = sanitize(lines);
   const results: RawQ[] = [];
   // Número de pregunta: "1." "1.-" "1-" "1)"
   const qRe = /^(\d{1,3})[.)–\-]\s*(.*)/;
@@ -94,8 +121,8 @@ function parseLines(lines: string[]): RawQ[] {
   const optRe = /^[AaBbCcDd][.)–\-]\s*(.*)/;
 
   let i = 0;
-  while (i < lines.length) {
-    const qm = lines[i].match(qRe);
+  while (i < cleaned.length) {
+    const qm = cleaned[i].match(qRe);
     if (!qm) { i++; continue; }
 
     const id = parseInt(qm[1]);
@@ -105,28 +132,28 @@ function parseLines(lines: string[]): RawQ[] {
     i++;
 
     // Acumular más texto de la pregunta hasta llegar a una opción o pregunta siguiente
-    while (i < lines.length && !optRe.test(lines[i]) && !qRe.test(lines[i])) {
-      text += ' ' + lines[i].trim();
+    while (i < cleaned.length && !optRe.test(cleaned[i]) && !qRe.test(cleaned[i])) {
+      text += ' ' + cleaned[i].trim();
       i++;
     }
     text = text.trim();
 
     // Recoger las 4 opciones
     const opts: string[] = [];
-    while (i < lines.length && opts.length < 4) {
-      const om = lines[i].match(optRe);
+    while (i < cleaned.length && opts.length < 4) {
+      const om = cleaned[i].match(optRe);
       if (!om) {
-        if (qRe.test(lines[i])) break; // siguiente pregunta
+        if (qRe.test(cleaned[i])) break; // siguiente pregunta
         // línea de continuación de la opción anterior
-        if (opts.length > 0) opts[opts.length - 1] += ' ' + lines[i].trim();
+        if (opts.length > 0) opts[opts.length - 1] += ' ' + cleaned[i].trim();
         i++;
         continue;
       }
       let optText = om[1].trim();
       i++;
       // Líneas de continuación de esta opción
-      while (i < lines.length && !optRe.test(lines[i]) && !qRe.test(lines[i])) {
-        optText += ' ' + lines[i].trim();
+      while (i < cleaned.length && !optRe.test(cleaned[i]) && !qRe.test(cleaned[i])) {
+        optText += ' ' + cleaned[i].trim();
         i++;
       }
       opts.push(optText.trim());
