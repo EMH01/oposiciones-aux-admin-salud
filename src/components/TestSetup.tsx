@@ -35,7 +35,6 @@ export default function TestSetup({ onStart, onBack }: TestSetupProps) {
       {/* Número de preguntas */}
       <div className="card">
         <h2 className="font-semibold text-gray-700 mb-4">Número de preguntas</h2>
-        <p className="text-xs text-blue-600 mb-3">El examen real tiene 100 preguntas</p>
         <div className="flex flex-wrap gap-3">
           {[10, 25, 50, 100].map(n => (
             <button
