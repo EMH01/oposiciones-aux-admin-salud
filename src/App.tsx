@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import Dashboard from "./components/Dashboard";
 import TestSetup from "./components/TestSetup";
 import TestRunner from "./components/TestRunner";
@@ -8,13 +8,41 @@ import type { AppState, TestConfig, TestSession, TestRecord, AnswerOption, AppSc
 import { loadState, saveState, addTestRecord, updateProgress, resetAllProgress, exportData, importData } from "./services/storage";
 import { selectQuestions } from "./services/questionSelector";
 import { calculateScore, getTopicBreakdown } from "./services/scoring";
+import { loadFromPdf } from "./services/pdfLoader";
+import { questions } from "./data/questions";
+
+function isPlaceholder() {
+  return questions[0]?.question.includes('[Proporciona el PDF');
+}
 
 function App() {
   const [screen, setScreen] = useState<AppScreen>("dashboard");
   const [state, setState] = useState<AppState>(loadState);
+  // questionsKey fuerza re-render de toda la UI cuando se cargan las preguntas del PDF
+  const [questionsKey, setQuestionsKey] = useState(0);
+  const [pdfStatus, setPdfStatus] = useState<'idle' | 'loading' | 'done' | 'error'>(
+    isPlaceholder() ? 'loading' : 'done',
+  );
+  const [pdfMsg, setPdfMsg] = useState('Cargando preguntas desde PDF…');
   const [session, setSession] = useState<TestSession | null>(null);
   const [lastRecord, setLastRecord] = useState<TestRecord | null>(null);
   const [resetConfirm, setResetConfirm] = useState(false);
+
+  // Carga el PDF al primer arranque si las preguntas son placeholder
+  useEffect(() => {
+    if (pdfStatus !== 'loading') return;
+    loadFromPdf((msg) => setPdfMsg(msg))
+      .then((count) => {
+        console.log(`PDF: ${count} preguntas parseadas`);
+        setPdfStatus('done');
+        setQuestionsKey(k => k + 1);
+      })
+      .catch((err: unknown) => {
+        console.warn('PDF no disponible:', err);
+        setPdfStatus('error');
+        setPdfMsg(err instanceof Error ? err.message : String(err));
+      });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const persistState = useCallback((newState: AppState) => {
     setState(newState);
@@ -105,6 +133,26 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Pantalla de carga del PDF (solo primer arranque) */}
+      {pdfStatus === 'loading' && (
+        <div className="fixed inset-0 bg-white flex flex-col items-center justify-center gap-4 z-50">
+          <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+          <p className="text-gray-600 text-sm">{pdfMsg}</p>
+        </div>
+      )}
+
+      {/* Aviso si el PDF no está disponible */}
+      {pdfStatus === 'error' && (
+        <div className="bg-amber-50 border-b border-amber-200 px-4 py-2 text-sm text-amber-800 flex items-center gap-2">
+          <span>⚠️</span>
+          <span>
+            Preguntas en modo plantilla —{' '}
+            <span className="font-mono text-xs">{pdfMsg}</span>
+          </span>
+        </div>
+      )}
+
+      <div key={questionsKey}>
       {screen === "dashboard" && (
         <Dashboard
           state={state}
@@ -166,6 +214,7 @@ function App() {
           </div>
         </div>
       )}
+      </div>{/* end questionsKey */}
     </div>
   );
 }

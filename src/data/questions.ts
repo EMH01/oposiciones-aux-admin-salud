@@ -3609,3 +3609,14 @@ export const TOPICS = [...new Set(questions.map(q => q.topic))];
 
 export const getQuestionsByTopic = (topic: string) =>
   questions.filter(q => q.topic === topic);
+
+// Carga en caliente desde caché (si ya se parseó el PDF anteriormente)
+try {
+  const _cached = localStorage.getItem('oposiciones_sas_questions_v1');
+  if (_cached) {
+    const _q = JSON.parse(_cached) as Question[];
+    if (Array.isArray(_q) && _q.length === questions.length) {
+      questions.splice(0, questions.length, ..._q);
+    }
+  }
+} catch { /* ignorar */ }
