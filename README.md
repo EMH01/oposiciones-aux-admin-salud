@@ -24,6 +24,14 @@ https://emh01.github.io/oposiciones-aux-admin-salud/
 - **Carga y parsing de preguntas desde PDF** con PDF.js
 - **Sin servidor ni registro de usuario**
 
+## Development approach
+
+This project was developed through an **AI-assisted prototyping workflow**.
+
+I defined and iterated the product requirements, study logic, user flows, adaptive-practice behavior, persistence model, validation criteria, and deployment goals. Most of the frontend implementation was generated and refined with AI assistance.
+
+The project is therefore best understood as evidence of **product thinking, technical specification, validation, and effective AI-assisted development**, rather than as a claim of frontend specialization.
+
 ## Arquitectura
 
 ```mermaid
