@@ -98,9 +98,11 @@ export default function Stats({ state, onBack, onExport, onImport }: StatsProps)
               <XAxis dataKey="date" tick={{ fontSize: 11 }} />
               <YAxis domain={[0, 10]} tick={{ fontSize: 11 }} />
               <Tooltip
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                formatter={(v: any) => [typeof v === 'number' ? v.toFixed(1) : String(v), 'Nota']}
-                labelFormatter={(l) => `Test: ${l}`}
+                formatter={(value) => [
+                  typeof value === 'number' ? value.toFixed(1) : String(value),
+                  'Nota',
+                ]}
+                labelFormatter={(label) => `Test: ${label}`}
               />
               <Line
                 type="monotone"
@@ -123,8 +125,7 @@ export default function Stats({ state, onBack, onExport, onImport }: StatsProps)
             <CartesianGrid strokeDasharray="3 3" horizontal={false} />
             <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 10 }} tickFormatter={v => `${v}%`} />
             <YAxis type="category" dataKey="topic" width={140} tick={{ fontSize: 10 }} />
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            <Tooltip formatter={(v: any) => [`${v}%`, 'Precisión']} />
+            <Tooltip formatter={(value) => [`${value}%`, 'Precisión']} />
             <Bar dataKey="accuracy" radius={[0, 4, 4, 0]}>
               {topicStats.map((entry, idx) => (
                 <Cell
