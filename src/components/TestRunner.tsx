@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import type { TestSession, AnswerOption } from '../types';
+import { useEffect, useState } from 'react';
+import type { AnswerOption, TestSession } from '../types';
 
 interface TestRunnerProps {
   session: TestSession;
@@ -11,20 +11,20 @@ const OPTION_LABELS: AnswerOption[] = ['A', 'B', 'C', 'D'];
 
 export default function TestRunner({ session, onAnswer, onFinish }: TestRunnerProps) {
   const [currentIndex, setCurrentIndex] = useState(session.currentIndex);
-  const [selectedAnswer, setSelectedAnswer] = useState<AnswerOption | null>(null);
-  const [showFeedback, setShowFeedback] = useState(false);
   const [elapsed, setElapsed] = useState(0);
 
   const question = session.questions[currentIndex];
   const total = session.questions.length;
   const isStudyMode = session.config.mode === 'study';
   const isLastQuestion = currentIndex === total - 1;
-  const existingAnswer = session.answers[question?.id] ?? null;
 
-  useEffect(() => {
-    setSelectedAnswer(existingAnswer);
-    setShowFeedback(isStudyMode && existingAnswer !== null);
-  }, [currentIndex]);
+  const hasAnswer = question
+    ? Object.prototype.hasOwnProperty.call(session.answers, question.id)
+    : false;
+  const selectedAnswer = question && hasAnswer
+    ? (session.answers[question.id] ?? null)
+    : null;
+  const showFeedback = isStudyMode && hasAnswer;
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -34,66 +34,55 @@ export default function TestRunner({ session, onAnswer, onFinish }: TestRunnerPr
   }, [session.startedAt]);
 
   const formatTime = (secs: number) => {
-    const m = Math.floor(secs / 60);
-    const s = secs % 60;
-    return `${m}:${s.toString().padStart(2, '0')}`;
+    const minutes = Math.floor(secs / 60);
+    const seconds = secs % 60;
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
+  if (!question) return null;
+
   const handleSelect = (option: AnswerOption) => {
-    if (isStudyMode && showFeedback) return; // locked after feedback
-    setSelectedAnswer(option);
+    if (showFeedback) return;
     onAnswer(question.id, option);
-    if (isStudyMode) {
-      setShowFeedback(true);
-    }
   };
 
   const handleBlank = () => {
-    if (isStudyMode && showFeedback) return;
-    setSelectedAnswer(null);
+    if (showFeedback) return;
     onAnswer(question.id, null);
-    if (isStudyMode) {
-      setShowFeedback(true);
-    }
   };
 
   const handleNext = () => {
     if (currentIndex < total - 1) {
-      setCurrentIndex(i => i + 1);
-      setShowFeedback(false);
-      setSelectedAnswer(null);
+      setCurrentIndex((index) => index + 1);
     }
   };
 
   const handlePrev = () => {
     if (currentIndex > 0) {
-      setCurrentIndex(i => i - 1);
-      setShowFeedback(false);
-      setSelectedAnswer(null);
+      setCurrentIndex((index) => index - 1);
     }
   };
 
   const getOptionStyle = (option: AnswerOption) => {
-    if (!showFeedback || !isStudyMode) {
+    if (!showFeedback) {
       return selectedAnswer === option
         ? 'border-blue-500 bg-blue-50 text-blue-800'
         : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50';
     }
-    // Study mode with feedback
-    if (option === question.correctAnswer) return 'border-green-500 bg-green-50 text-green-800';
-    if (option === selectedAnswer && option !== question.correctAnswer)
+    if (option === question.correctAnswer) {
+      return 'border-green-500 bg-green-50 text-green-800';
+    }
+    if (option === selectedAnswer) {
       return 'border-red-400 bg-red-50 text-red-700';
+    }
     return 'border-gray-200 text-gray-500';
   };
 
   const answeredCount = Object.keys(session.answers).length;
   const progress = Math.round(((currentIndex + 1) / total) * 100);
 
-  if (!question) return null;
-
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div className="text-sm text-gray-500">
           <span className="font-medium text-gray-700">{currentIndex + 1}</span>/{total}
@@ -101,16 +90,12 @@ export default function TestRunner({ session, onAnswer, onFinish }: TestRunnerPr
         </div>
         <div className="flex items-center gap-4">
           <span className="text-sm text-gray-400 font-mono">{formatTime(elapsed)}</span>
-          {session.config.mode === 'study' && (
-            <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">Estudio</span>
-          )}
-          {session.config.mode === 'exam' && (
-            <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">Examen</span>
-          )}
+          <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+            {isStudyMode ? 'Estudio' : 'Examen'}
+          </span>
         </div>
       </div>
 
-      {/* Progress bar */}
       <div className="w-full bg-gray-200 rounded-full h-1.5">
         <div
           className="bg-blue-500 h-1.5 rounded-full transition-all duration-300"
@@ -118,7 +103,6 @@ export default function TestRunner({ session, onAnswer, onFinish }: TestRunnerPr
         />
       </div>
 
-      {/* Question */}
       <div className="card">
         <div className="flex justify-between items-start mb-1">
           <span className="text-xs text-blue-600 font-medium bg-blue-50 px-2 py-0.5 rounded">
@@ -131,14 +115,13 @@ export default function TestRunner({ session, onAnswer, onFinish }: TestRunnerPr
         </p>
       </div>
 
-      {/* Options */}
       <div className="space-y-2">
-        {OPTION_LABELS.map(option => (
+        {OPTION_LABELS.map((option) => (
           <button
             key={option}
             onClick={() => handleSelect(option)}
             className={`w-full text-left p-4 rounded-xl border-2 transition-colors duration-150 ${getOptionStyle(option)}`}
-            disabled={isStudyMode && showFeedback}
+            disabled={showFeedback}
           >
             <span className="font-bold mr-3 text-sm">{option}.</span>
             {question.options[option]}
@@ -146,8 +129,7 @@ export default function TestRunner({ session, onAnswer, onFinish }: TestRunnerPr
         ))}
       </div>
 
-      {/* Study mode feedback */}
-      {isStudyMode && showFeedback && (
+      {showFeedback && (
         <div className={`rounded-xl p-4 ${
           selectedAnswer === question.correctAnswer
             ? 'bg-green-50 border border-green-200'
@@ -167,7 +149,6 @@ export default function TestRunner({ session, onAnswer, onFinish }: TestRunnerPr
         </div>
       )}
 
-      {/* Navigation */}
       <div className="flex items-center justify-between pt-2">
         <button
           onClick={handlePrev}
@@ -180,52 +161,46 @@ export default function TestRunner({ session, onAnswer, onFinish }: TestRunnerPr
         <button
           onClick={handleBlank}
           className="text-sm text-gray-400 hover:text-gray-600 transition-colors"
-          disabled={isStudyMode && showFeedback}
+          disabled={showFeedback}
         >
           Dejar en blanco
         </button>
 
         {isLastQuestion ? (
-          <button
-            onClick={onFinish}
-            className="btn-primary"
-          >
+          <button onClick={onFinish} className="btn-primary">
             Finalizar test
           </button>
         ) : (
-          <button
-            onClick={handleNext}
-            className="btn-primary"
-          >
+          <button onClick={handleNext} className="btn-primary">
             Siguiente →
           </button>
         )}
       </div>
 
-      {/* Question navigator */}
       <div className="card">
         <p className="text-xs text-gray-500 mb-2 font-medium">Navegador</p>
         <div className="flex flex-wrap gap-1">
-          {session.questions.map((q, idx) => {
-            const ans = session.answers[q.id];
-            let cls = 'w-7 h-7 text-xs rounded font-medium transition-colors cursor-pointer ';
-            if (idx === currentIndex) {
-              cls += 'bg-blue-600 text-white';
-            } else if (ans !== undefined) {
-              cls += 'bg-green-100 text-green-700 hover:bg-green-200';
+          {session.questions.map((item, index) => {
+            const answered = Object.prototype.hasOwnProperty.call(
+              session.answers,
+              item.id,
+            );
+            let className =
+              'w-7 h-7 text-xs rounded font-medium transition-colors cursor-pointer ';
+            if (index === currentIndex) {
+              className += 'bg-blue-600 text-white';
+            } else if (answered) {
+              className += 'bg-green-100 text-green-700 hover:bg-green-200';
             } else {
-              cls += 'bg-gray-100 text-gray-500 hover:bg-gray-200';
+              className += 'bg-gray-100 text-gray-500 hover:bg-gray-200';
             }
             return (
               <button
-                key={q.id}
-                onClick={() => {
-                  setCurrentIndex(idx);
-                  setShowFeedback(false);
-                }}
-                className={cls}
+                key={item.id}
+                onClick={() => setCurrentIndex(index)}
+                className={className}
               >
-                {idx + 1}
+                {index + 1}
               </button>
             );
           })}
