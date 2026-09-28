@@ -1,26 +1,71 @@
-# Oposiciones Auxiliar Administrativo — SAS
+# Oposiciones SCS · Auxiliar Administrativo
 
-Aplicación web para preparar el examen de **Grupo Auxiliar de la Función Administrativa**.
+Aplicación web para preparar pruebas de **Grupo Auxiliar de la Función Administrativa del Servicio Canario de la Salud (SCS)**.
 
-300 preguntas tipo test organizadas por temas, con selección inteligente de preguntas, estadísticas detalladas y persistencia local en el navegador.
+El proyecto combina un banco de 300 preguntas, práctica por temas, selección adaptativa, estadísticas de progreso y persistencia local sin necesidad de cuenta ni backend.
 
----
+## Demo
+
+**GitHub Pages:**  
+https://emh01.github.io/oposiciones-aux-admin-salud/
 
 ## Funcionalidades
 
-- **300 preguntas** distribuidas en 16 bloques temáticos
-- **Selección inteligente**: prioriza preguntas no vistas, falladas o con baja puntuación
-- **Dos modos de examen**: Examen (sin feedback) y Estudio (feedback inmediato)
-- **Penalización configurable**: cada 3 fallos restan 1 acierto
-- **Filtro por tema**: practica solo los bloques que necesitas
-- **Estadísticas**: evolución de notas, precisión por tema, historial de tests
-- **Exportar / importar** progreso en JSON
-- **Sin registro, sin servidor**: todo se guarda en `localStorage`
+- **300 preguntas** organizadas en 16 bloques temáticos
+- **Selección adaptativa** que prioriza preguntas no vistas, falladas o con bajo nivel de dominio
+- **Modo examen** sin feedback inmediato
+- **Modo estudio** con feedback durante la práctica
+- **Penalización configurable**: cada 3 respuestas incorrectas restan 1 acierto
+- **Filtro por temas**
+- **Estadísticas de progreso** y precisión por tema
+- **Historial de tests**
+- **Exportación / importación** del progreso en JSON
+- **Persistencia local** mediante `localStorage`
+- **Carga y parsing de preguntas desde PDF** con PDF.js
+- **Sin servidor ni registro de usuario**
+
+## Development approach
+
+This project was developed through an **AI-assisted prototyping workflow**.
+
+I defined and iterated the product requirements, study logic, user flows, adaptive-practice behavior, persistence model, validation criteria, and deployment goals. Most of the frontend implementation was generated and refined with AI assistance.
+
+The project is therefore best understood as evidence of **product thinking, technical specification, validation, and effective AI-assisted development**, rather than as a claim of frontend specialization.
+
+## Arquitectura
+
+```mermaid
+flowchart LR
+    U[Usuario] --> UI[React UI]
+    UI --> Q[Selector adaptativo]
+    Q --> B[Banco de preguntas]
+    PDF[preguntas.pdf] --> P[PDF.js parser]
+    P --> B
+    UI --> S[Scoring]
+    UI --> L[localStorage]
+    L --> Q
+    L --> ST[Estadísticas]
+```
+
+El navegador mantiene todo el progreso localmente. No hay base de datos, autenticación ni API propia.
+
+## Selección de preguntas
+
+Las preguntas se clasifican en cuatro niveles:
+
+- nunca vistas
+- falladas
+- vistas con dominio bajo
+- vistas con dominio alto
+
+Cada grupo recibe un peso diferente y el selector realiza una **permutación aleatoria ponderada**. Las preguntas de mayor prioridad tienen más probabilidad de aparecer antes, pero ninguna queda completamente excluida.
+
+Las claves históricas de `localStorage` conservan el identificador interno `sas` por compatibilidad con usuarios que ya tenían progreso guardado antes de normalizar el nombre del producto a SCS.
 
 ## Temas incluidos
 
 | # | Tema |
-|---|------|
+|---|---|
 | 1 | Prevención de Riesgos Laborales |
 | 2 | Autonomía del Paciente |
 | 3 | Estatuto Marco del Personal Estatutario |
@@ -38,134 +83,97 @@ Aplicación web para preparar el examen de **Grupo Auxiliar de la Función Admin
 | 15 | Listas de Espera |
 | 16 | Informática y Ofimática |
 
----
+## Stack
 
-## Tecnologías
-
-- [React 18](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/)
-- [Vite](https://vite.dev/)
-- [Tailwind CSS v3](https://tailwindcss.com/)
-- [Recharts](https://recharts.org/) — gráficas de estadísticas
-
----
+- **React 19**
+- **TypeScript**
+- **Vite 8**
+- **Tailwind CSS 3**
+- **Recharts**
+- **PDF.js**
+- **GitHub Pages**
+- **GitHub Actions**
 
 ## Desarrollo local
 
-### Requisitos previos
+### Requisitos
 
-- Node.js ≥ 18
-- npm ≥ 9
+- Node.js **20.19+** o una versión compatible posterior
+- npm
 
 ### Instalación
 
 ```bash
 git clone https://github.com/EMH01/oposiciones-aux-admin-salud.git
 cd oposiciones-aux-admin-salud
-npm install
-```
-
-### Arrancar el servidor de desarrollo
-
-```bash
+npm ci
 npm run dev
 ```
 
-Abre [http://localhost:5173](http://localhost:5173) en el navegador.
+La aplicación estará disponible normalmente en:
 
-### Build de producción
+```text
+http://localhost:5173
+```
+
+## Quality checks
 
 ```bash
+npm run lint
 npm run build
 ```
 
-El resultado queda en la carpeta `dist/`.
+GitHub Actions ejecuta ambos checks en cada pull request y en `main`.
 
----
+## Despliegue
 
-## Despliegue en GitHub Pages
+El despliegue a GitHub Pages es automático desde `main` mediante:
 
-### Primera vez
-
-```bash
-npm install --save-dev gh-pages
+```text
+.github/workflows/deploy.yml
 ```
 
-### Publicar
+No es necesario publicar manualmente con `gh-pages`.
 
-```bash
-npm run deploy
-```
+## Persistencia y privacidad
 
-La app estará disponible en:
-👉 **https://emh01.github.io/oposiciones-aux-admin-salud/**
+El progreso se guarda únicamente en el navegador del usuario:
 
----
+- historial de tests
+- dominio por pregunta
+- últimas respuestas
+- estadísticas
+
+Los datos pueden exportarse a JSON y restaurarse posteriormente. El proyecto no requiere cuenta y no envía ese progreso a un servidor propio.
+
+## Implementación destacable
+
+### PDF parsing
+
+`src/services/pdfLoader.ts` utiliza PDF.js para:
+
+1. descargar el PDF incluido en `public/`
+2. reconstruir líneas a partir de sus coordenadas
+3. eliminar ruido de pie de página
+4. detectar preguntas y cuatro opciones
+5. combinar el contenido extraído con los metadatos de respuesta/tema
+6. cachear el resultado en el navegador
+
+### Scoring
+
+La lógica de puntuación está aislada en `src/services/scoring.ts` y soporta examen con o sin penalización.
+
+### Estado local
+
+`src/services/storage.ts` encapsula progreso, historial, importación/exportación y niveles de dominio.
+
+## Limitaciones
+
+- el sistema depende del formato concreto del PDF de preguntas
+- el progreso es específico del navegador salvo exportación manual
+- el selector adaptativo es heurístico; no pretende ser un modelo psicométrico
+- el contenido de las preguntas debe revisarse cuando cambien temarios o normativa
 
 ## Licencia
 
-MIT
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
-
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+Este repositorio incluye una licencia **CC0 1.0 Universal**, según el archivo [LICENSE](LICENSE).

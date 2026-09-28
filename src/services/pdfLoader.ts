@@ -116,9 +116,9 @@ function parseLines(lines: string[]): RawQ[] {
   const cleaned = sanitize(lines);
   const results: RawQ[] = [];
   // Número de pregunta: "1." "1.-" "1-" "1)"
-  const qRe = /^(\d{1,3})[.)–\-]\s*(.*)/;
+  const qRe = /^(\d{1,3})[.)–-]\s*(.*)/;
   // Opción: "A)" "A." "a)" "A-" "A.-"
-  const optRe = /^[AaBbCcDd][.)–\-]\s*(.*)/;
+  const optRe = /^[AaBbCcDd][.)–-]\s*(.*)/;
 
   let i = 0;
   while (i < cleaned.length) {
