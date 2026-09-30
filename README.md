@@ -40,6 +40,18 @@ Aplicación web para preparar el examen de **Grupo Auxiliar de la Función Admin
 
 ---
 
+## Banco de preguntas
+
+Los 300 enunciados, las 1200 opciones y las respuestas correctas están extraídos de `public/preguntas.pdf` y guardados en `src/data/questions.ts`. La web utiliza este banco directamente, sin leer el PDF ni recuperar preguntas de la caché del navegador. Los identificadores se conservan para mantener el progreso existente.
+
+Para regenerarlo (Python con `pdfplumber` instalado):
+
+```bash
+python scripts/extract_questions.py
+```
+
+El extractor elimina cabeceras y pies por su posición en cada página y exige las 300 preguntas consecutivas, cuatro opciones ordenadas y una respuesta oficial por pregunta antes de guardar el resultado.
+
 ## Tecnologías
 
 - [React 18](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/)
